@@ -1,6 +1,6 @@
 ## Hex Loader
 
-GUI-загрузчик hex-файлов для Arduino на Go
+GUI-загрузчик hex-файлов на базе **Arduino CLI** созданный на **Go**
 
 ### Alt Linux 11
 
@@ -8,16 +8,16 @@ GUI-загрузчик hex-файлов для Arduino на Go
 epmi --auto golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm libwayland-egl-devel
 ```
 
-#### Настройка Go
+#### Настройка Go-проекта
 
 ```shell
-mkdir hexloader
+mkdir hex-loader
 ```
 ```shell
-cd hexloader/
+cd hex-loader/
 ```
 ```shell
-go mod init hexloader
+go mod init hex-loader
 ```
 ```shell
 go get fyne.io/fyne/v2@latest
@@ -35,4 +35,14 @@ go mod tidy
 go run main.go
 ```
 
-### Ubuntu/Mint
+#### Сборка Go-проекта
+
+C оптимизацией размера бинарника
+```shell
+go build -ldflags="-s -w" -o xloader main.go
+```
+- s — удаляет отладочную информацию.
+- -w — удаляет DWARF-таблицы (ещё меньше размер).
+
+
+### Ubuntu/Mint (находится в разработке)
