@@ -4,48 +4,47 @@ GUI-загрузчик hex-файлов на базе **Arduino CLI** созда
 
 ### Alt Linux 11
 
+Установка системных зависимостей (делается один раз)
 ```shell
-epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm libwayland-egl-devel
+epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm-devel libxkbcommon-devel libwayland-cursor-devel
 ```
 
-#### Настройка Go-проекта
+#### Созданиие Go-проекта
 
-Создаём папку проекта:
-```shell
-mkdir hex-loader
-```
-Переходим в папку проекта:
-```shell
-cd hex-loader/
-```
-Создаём файл с программой:
-```shell
-micro main.go
-```
-```shell
+mkdir hex-loader && cd hex-loader
+micro main.go   # (напишите код)
 go mod init hex-loader
-```
-```shell
 go get fyne.io/fyne/v2@latest
-```
-```shell
-go install fyne.io/tools/cmd/fyne@latest
-```
-```shell
+go install fyne.io/tools/cmd/fyne@latest   # опционально
 go mod tidy
-```
-```shell
-go run main.go
-```
+go run main.go   # проверка
 
 #### Сборка Go-проекта
 
 C оптимизацией размера бинарника
 ```shell
-go build -ldflags="-s -w" -o xloader main.go
+go build -ldflags="-s -w" -o hex-loader main.go
 ```
 - s — удаляет отладочную информацию.
 - -w — удаляет DWARF-таблицы (ещё меньше размер).
+или
+```shell
+go build -ldflags="-s -w" -trimpath -o hex-loader main.go
+```
+-trimpath — убирает пути к исходникам из бинарника.
+
+Проверка зависимостей
+```shell
+ldd hex-loader
+```
 
 
 ### Ubuntu/Mint (находится в разработке)
+
+Установка системных зависимостей (один раз)
+```shell
+sudo apt update
+sudo apt install build-essential golang libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libxxf86vm-dev libwayland-dev libwayland-egl-dev
+```
+
+Создание и сборка проекта теже, что и для Alt Linux p11
