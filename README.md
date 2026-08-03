@@ -5,7 +5,7 @@ GUI-загрузчик hex-файлов на базе **Arduino CLI** созда
 ### Alt Linux 11
 
 ```shell
-epmi --auto golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm libwayland-egl-devel
+epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm libwayland-egl-devel
 ```
 
 #### Настройка Go-проекта
