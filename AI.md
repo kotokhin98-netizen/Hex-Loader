@@ -93,3 +93,19 @@ board_manager:
     - https://mirrors.nju.edu.cn/arduino/package_index.json
 ```
 
+Скачайте индексы с официального сайта (например, через браузер с включенным VPN):
+
+https://downloads.arduino.cc/packages/package_index.tar.bz2
+
+https://downloads.arduino.cc/libraries/library_index.tar.bz2
+
+```shell
+cd ~/.arduino15/
+```
+```shell
+tar -xjf package_index.tar.bz2
+```
+```shell
+tar -xjf library_index.tar.bz2
+```
+
