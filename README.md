@@ -8,6 +8,10 @@ GUI-загрузчик hex-файлов на базе **Arduino CLI** созда
 ```shell
 epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm-devel libxkbcommon-devel libwayland-cursor-devel
 ```
+и
+```shell
+epmi --auto arduino-cli
+```
 
 #### Созданиие Go-проекта
 

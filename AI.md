@@ -87,3 +87,9 @@ arduino-cli board list
 Некоторые индексы не удалось обновить
 ```
 
+```yaml
+board_manager:
+  additional_urls:
+    - https://mirrors.nju.edu.cn/arduino/package_index.json
+```
+
