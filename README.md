@@ -10,11 +10,17 @@ epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-
 
 #### Настройка Go-проекта
 
+Создаём папку проекта:
 ```shell
 mkdir hex-loader
 ```
+Переходим в папку проекта:
 ```shell
 cd hex-loader/
+```
+Создаём файл с программой:
+```shell
+micro main.go
 ```
 ```shell
 go mod init hex-loader
@@ -24,9 +30,6 @@ go get fyne.io/fyne/v2@latest
 ```
 ```shell
 go install fyne.io/tools/cmd/fyne@latest
-```
-```shell
-micro main.go
 ```
 ```shell
 go mod tidy
