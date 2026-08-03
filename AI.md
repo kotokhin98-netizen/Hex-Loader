@@ -67,3 +67,23 @@ arduino-cli board list
 Если вывод показывает вашу плату (например, `/dev/ttyACM0`), значит, проблема решена, и ваша программа Hex Loader сможет её найти.
 
 Какой из этих способов вам удобнее попробовать первым? Если нужна будет помощь с настройкой для конкретной платы, напишите, я подскажу.
+
+даже после создания файла ~/.arduino15/arduino-cli.yaml
+
+клманда arduino-cli core update-index вс1 равно возвращает ошибку:
+
+```
+Скачивание индекса: library_index.tar.bz2 Ответ сервера: 403 Forbidden                                                                                                 
+Ошибка при инициализации экземпляра: Ошибка скачивания индекса 'https://downloads.arduino.cc/libraries/library_index.tar.bz2': Ответ сервера: 403 Forbidden
+Ошибка при инициализации экземпляра: Загрузка индексного файла: загрузка индексного файла json /home/user/.arduino15/package_index.json: open /home/user/.arduino15/package_index.json: no such file or directory
+Ошибка при инициализации экземпляра: Загрузка индексного файла: загрузка индексного файла json /home/user/.arduino15/package_index.json: open /home/user/.arduino15/package_index.json: no such file or directory
+Ошибка при инициализации экземпляра: Ошибка загрузки аппаратной платформы: обнаружение builtin:serial-discovery не найдено
+Ошибка при инициализации экземпляра: Ошибка загрузки аппаратной платформы: обнаружение builtin:mdns-discovery не найдено
+Ошибка при инициализации экземпляра: Ошибка загрузки аппаратной платформы: обнаружение builtin:serial-discovery не найдено
+Ошибка при инициализации экземпляра: Ошибка загрузки аппаратной платформы: обнаружение builtin:mdns-discovery не найдено
+Ошибка при инициализации экземпляра: Загрузка индексного файла: чтение library_index.json: open /home/user/.arduino15/library_index.json: no such file or directory
+Скачивание индекса: package_index.tar.bz2 Ответ сервера: 403 Forbidden                                                                                                 
+Скачивание индекса: package_index.json Ответ сервера: 404 Not Found                                                                                                    
+Некоторые индексы не удалось обновить
+```
+
