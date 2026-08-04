@@ -109,6 +109,33 @@ find ~/.arduino15/packages/ -name "*.so*" -exec chmod +x {} \;
 find ~/.arduino15/packages/ -path "*/bin/*" -exec chmod +x {} \;
 ```
 
+### Проверить работу Hex Loader
+
+1. Создать большой скетч
+```cpp
+// big_sketch.ino
+// Скетч занимает ~30 КБ в памяти Arduino Uno
+// Большой массив данных
+const int arraySize = 15000;
+unsigned char bigArray[arraySize];
+
+void setup() {
+  Serial.begin(9600);
+  // Заполняем массив данными
+  for (int i = 0; i < arraySize; i++) {
+    bigArray[i] = i % 256;
+  }
+  Serial.println("Большой скетч загружен!");
+}
+
+void loop() {
+  // Ничего не делаем
+  delay(1000);
+}
+```
+2. Скомпилировать его в **Arduino IDE**, сохранить HEX-файл (Скетч → Экспортировать скомпилированный бинарный файл).
+3. Загрузить полученный HEX-файл в плату с помощью Hex Loader
+
 ---
 
 ## 📄 Лицензия
