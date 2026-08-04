@@ -186,7 +186,7 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 	dialog.Show()
 }
 
-// uploadWithProgress выполняет загрузку с анимацией (минимальное время 2 секунды)
+// uploadWithProgress выполняет загрузку с анимацией (текстовый спиннер)
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
     cmd := exec.Command(
         "arduino-cli",
@@ -215,6 +215,14 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
     dotIndex := 0
     timeout := time.After(30 * time.Second)
 
+    // Устанавливаем прогресс в неопределённое состояние (50%)
+    fyne.Do(func() {
+        progress.SetValue(0.5)
+        progress.Refresh()
+        statusLabel.SetText("⏳ Загрузка...")
+        statusLabel.Refresh()
+    })
+
     for {
         select {
         case <-done:
@@ -237,9 +245,8 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
             return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
         default:
             fyne.Do(func() {
-                progress.SetValue(0.5)
-                progress.Refresh()
-                statusLabel.SetText("Загрузка " + dots[dotIndex])
+                // Обновляем только текст, прогресс остаётся 50%
+                statusLabel.SetText("⏳ Загрузка " + dots[dotIndex])
                 statusLabel.Refresh()
             })
             dotIndex = (dotIndex + 1) % len(dots)
