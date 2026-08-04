@@ -19,10 +19,39 @@ type BoardInfo struct {
 	FQBN string
 }
 
+// checkArduinoCLI проверяет, доступен ли arduino-cli в PATH
+func checkArduinoCLI() error {
+	_, err := exec.LookPath("arduino-cli")
+	return err
+}
+
+// showErrorAndQuit показывает диалог с ошибкой и кнопкой для выхода
+func showErrorAndQuit(a fyne.App, w fyne.Window, err error) {
+	label := widget.NewLabel(
+		"❌ arduino-cli не найден.\n\n" +
+			err.Error() +
+			"\n\nУстановите arduino-cli и убедитесь, что он доступен в PATH.\n" +
+			"После установки перезапустите программу.",
+	)
+	btnQuit := widget.NewButton("Выйти", func() {
+		a.Quit()
+	})
+	content := container.NewVBox(label, btnQuit)
+	dialog := dialog.NewCustom("Ошибка", "", content, w)
+	dialog.Resize(fyne.NewSize(450, 200))
+	dialog.Show()
+}
+
 func main() {
 	a := app.New()
 	w := a.NewWindow("Загрузчик HEX в Arduino")
 	w.Resize(fyne.NewSize(550, 280))
+
+	// Проверка наличия arduino-cli
+	if err := checkArduinoCLI(); err != nil {
+		showErrorAndQuit(a, w, err)
+		return
+	}
 
 	var hexPath string
 	var portPath string
