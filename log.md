@@ -10,3 +10,14 @@ arduino-cli board list
 Ошибка при инициализации экземпляра: Загрузка индексного файла: чтение library_index.json: open /home/user/.arduino15/library_index.json: no such file or directory
 Платы не найдены.
 ```
+
+```
+Скачивание пропущенных инструментов builtin:serial-discovery@1.5.2...
+builtin:serial-discovery@1.5.2 Ответ сервера: 403 Forbidden                                                    
+Ошибка при инициализации экземпляра: скачивание builtin:serial-discovery@1.5.2 инструмента: Ответ сервера: 403 Forbidden
+Скачивание пропущенных инструментов builtin:mdns-discovery@1.1.0...
+builtin:mdns-discovery@1.1.0 Ответ сервера: 403 Forbidden                                                      
+Ошибка при инициализации экземпляра: скачивание builtin:mdns-discovery@1.1.0 инструмента: Ответ сервера: 403 Forbidden
+Порт         Протокол Тип               Наименование платы FQBN Ядро
+/dev/ttyUSB0 serial   Serial Port (USB) Неизвестный
+```
