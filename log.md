@@ -21,3 +21,9 @@ builtin:mdns-discovery@1.1.0 Ответ сервера: 403 Forbidden
 Порт         Протокол Тип               Наименование платы FQBN Ядро
 /dev/ttyUSB0 serial   Serial Port (USB) Неизвестный
 ```
+
+```
+go build -ldflags="-s -w" -trimpath -o hex-loader main_v2.go 
+# command-line-arguments
+./main_v2.go:148:3: portLabel.SetText(board.Port) (no value) used as value or type
+```
