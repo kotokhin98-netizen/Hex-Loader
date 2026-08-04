@@ -186,8 +186,7 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 	dialog.Show()
 }
 
-// uploadWithProgress выполняет загрузку с анимацией (не процент)
-// uploadWithProgress выполняет загрузку с анимацией (не процент)
+// uploadWithProgress выполняет загрузку с анимацией
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
     cmd := exec.Command(
         "arduino-cli",
@@ -210,11 +209,12 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
         done <- true
     }()
 
-    // Анимация загрузки (точки)
-    dots := []string{"", ".", "..", "..."}
+    // Анимация загрузки (вращающаяся палочка)
+    dots := []string{"|", "/", "—", "\\"}
     dotIndex := 0
     timeout := time.After(30 * time.Second)
 
+    // Показываем анимацию, пока команда выполняется
     for {
         select {
         case <-done:
@@ -230,14 +230,14 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
             cmd.Process.Kill()
             return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
         default:
-            // Обновляем анимацию каждые 500 мс
+            // Обновляем анимацию каждые 200 мс (быстрее, чтобы было заметно)
             fyne.Do(func() {
-                // Показываем прогресс 50% (неопределённый)
+                // Показываем прогресс 0.5 (неопределённый)
                 progress.SetValue(0.5)
-                statusLabel.SetText("Загрузка" + dots[dotIndex])
+                statusLabel.SetText("Загрузка " + dots[dotIndex])
             })
             dotIndex = (dotIndex + 1) % len(dots)
-            time.Sleep(500 * time.Millisecond)
+            time.Sleep(200 * time.Millisecond)
         }
     }
 }
