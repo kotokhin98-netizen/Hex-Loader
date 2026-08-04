@@ -44,10 +44,8 @@ func (t myTheme) Size(name fyne.ThemeSizeName) float32 {
 func (t myTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNamePrimary:
-		// Цвет заполнения прогресс-бара — серый
 		return color.NRGBA{R: 0x88, G: 0x88, B: 0x88, A: 0xFF}
 	case theme.ColorNameBackground:
-		// Фон прогресс-бара — светло-серый
 		return color.NRGBA{R: 0xE0, G: 0xE0, B: 0xE0, A: 0xFF}
 	default:
 		return t.Theme.Color(name, variant)
@@ -186,73 +184,78 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 	dialog.Show()
 }
 
-// uploadWithProgress выполняет загрузку с анимацией (текстовый спиннер)
+// uploadWithProgress выполняет загрузку с анимацией (работает в отдельной горутине)
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
-    cmd := exec.Command(
-        "arduino-cli",
-        "upload",
-        "-p", portPath,
-        "--fqbn", fqbn,
-        "--input-file", hexPath,
-    )
-    var stderr bytes.Buffer
-    cmd.Stderr = &stderr
+	cmd := exec.Command(
+		"arduino-cli",
+		"upload",
+		"-p", portPath,
+		"--fqbn", fqbn,
+		"--input-file", hexPath,
+	)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 
-    startTime := time.Now()
-    err := cmd.Start()
-    if err != nil {
-        return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
-    }
+	// Создаём канал для остановки анимации
+	stopAnimation := make(chan bool)
 
-    done := make(chan bool)
-    go func() {
-        err = cmd.Wait()
-        done <- true
-    }()
+	// Запускаем анимацию в отдельной горутине
+	go func() {
+		dots := []string{"|", "/", "—", "\\"}
+		dotIndex := 0
+		for {
+			select {
+			case <-stopAnimation:
+				return
+			default:
+				fyne.Do(func() {
+					progress.SetValue(0.5)
+					progress.Refresh()
+					statusLabel.SetText("⏳ Загрузка " + dots[dotIndex])
+					statusLabel.Refresh()
+				})
+				dotIndex = (dotIndex + 1) % len(dots)
+				time.Sleep(200 * time.Millisecond)
+			}
+		}
+	}()
 
-    // Анимация загрузки
-    dots := []string{"|", "/", "—", "\\"}
-    dotIndex := 0
-    timeout := time.After(30 * time.Second)
+	// Запускаем команду и ждём завершения
+	startTime := time.Now()
+	err := cmd.Start()
+	if err != nil {
+		stopAnimation <- true
+		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
+	}
 
-    // Устанавливаем прогресс в неопределённое состояние (50%)
-    fyne.Do(func() {
-        progress.SetValue(0.5)
-        progress.Refresh()
-        statusLabel.SetText("⏳ Загрузка...")
-        statusLabel.Refresh()
-    })
+	err = cmd.Wait()
 
-    for {
-        select {
-        case <-done:
-            elapsed := time.Since(startTime)
-            if elapsed < 2*time.Second {
-                time.Sleep(2*time.Second - elapsed)
-            }
-            if err != nil {
-                return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
-            }
-            fyne.Do(func() {
-                progress.SetValue(1.0)
-                progress.Refresh()
-                statusLabel.SetText("✅ Загрузка успешно завершена!")
-                statusLabel.Refresh()
-            })
-            return nil
-        case <-timeout:
-            cmd.Process.Kill()
-            return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
-        default:
-            fyne.Do(func() {
-                // Обновляем только текст, прогресс остаётся 50%
-                statusLabel.SetText("⏳ Загрузка " + dots[dotIndex])
-                statusLabel.Refresh()
-            })
-            dotIndex = (dotIndex + 1) % len(dots)
-            time.Sleep(200 * time.Millisecond)
-        }
-    }
+	// Останавливаем анимацию
+	stopAnimation <- true
+
+	// Ждём минимум 2 секунды для отображения анимации
+	elapsed := time.Since(startTime)
+	if elapsed < 2*time.Second {
+		time.Sleep(2*time.Second - elapsed)
+	}
+
+	if err != nil {
+		fyne.Do(func() {
+			statusLabel.SetText("❌ Ошибка загрузки")
+			statusLabel.Refresh()
+			progress.SetValue(0)
+			progress.Refresh()
+		})
+		return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
+	}
+
+	fyne.Do(func() {
+		progress.SetValue(1.0)
+		progress.Refresh()
+		statusLabel.SetText("✅ Загрузка успешно завершена!")
+		statusLabel.Refresh()
+	})
+	return nil
 }
 
 func main() {
@@ -365,10 +368,6 @@ func main() {
 		progress.SetValue(0)
 		err := uploadWithProgress(hexPath, portPath, fqbn, progress, statusLabel)
 		if err != nil {
-			fyne.Do(func() {
-				statusLabel.SetText("❌ Ошибка загрузки")
-				progress.SetValue(0)
-			})
 			dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
 			return
 		}
@@ -413,13 +412,11 @@ func main() {
 func selectBoard(board BoardInfo, portPath *string, fqbn *string, portLabel *widget.Label, statusLabel *widget.Label, w fyne.Window) {
 	*portPath = board.Port
 	portLabel.SetText(board.Port)
-	// Проверяем, что FQBN действительно похож на FQBN (содержит двоеточия)
 	if board.FQBN != "" && strings.Count(board.FQBN, ":") >= 2 {
 		*fqbn = board.FQBN
 		portLabel.SetText(board.Port + " (" + board.FQBN + ")")
 		statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
 	} else {
-		// Принудительно показываем диалог выбора FQBN
 		statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
 		showFQBNInputDialog(w, fqbn, statusLabel)
 		if *fqbn != "" {
@@ -454,16 +451,13 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 		}
 	}
 
-	// Создаём диалог заранее, чтобы иметь доступ к его методам
 	var dialogObj *dialog.CustomDialog
 
-	// Большая кнопка OK с обводкой
 	okButton := newButtonWithBorder("✅ OK", func() {
 		if *fqbn == "" && len(commonFQBNs) > 0 {
 			*fqbn = commonFQBNs[0]
 			statusLabel.SetText("FQBN выбран: " + *fqbn)
 		}
-		// Закрываем диалог
 		if dialogObj != nil {
 			dialogObj.Hide()
 		}
@@ -477,7 +471,6 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 		container.NewCenter(okButton),
 	)
 
-	// Создаём диалог и сохраняем ссылку
 	dialogObj = dialog.NewCustom("Выбор FQBN", "", content, w)
 	dialogObj.Resize(fyne.NewSize(500, 350))
 	dialogObj.Show()
