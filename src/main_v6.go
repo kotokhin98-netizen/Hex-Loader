@@ -198,34 +198,59 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
+	// Запускаем команду
 	err := cmd.Start()
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
 	}
 
+	// Канал для отслеживания завершения
 	done := make(chan bool)
 	go func() {
-		for i := 0; i <= 100; i += 5 {
-			select {
-			case <-done:
-				return
-			default:
-				progress.SetValue(float64(i) / 100)
-				statusLabel.SetText(fmt.Sprintf("Загрузка... %d%%", i))
-				time.Sleep(100 * time.Millisecond)
-			}
-		}
+		err = cmd.Wait()
+		done <- true
 	}()
 
-	err = cmd.Wait()
-	done <- true
-
-	if err != nil {
-		return fmt.Errorf("%v: %s", err, stderr.String())
+	// Прогресс-бар с таймаутом (максимум 30 секунд)
+	timeout := time.After(30 * time.Second)
+	for i := 0; i <= 100; i += 5 {
+		select {
+		case <-done:
+			// Команда завершилась
+			if err != nil {
+				return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
+			}
+			// Обновляем UI в главном потоке
+			fyne.Do(func() {
+				progress.SetValue(1.0)
+				statusLabel.SetText("✅ Загрузка успешно завершена!")
+			})
+			return nil
+		case <-timeout:
+			// Если процесс не завершился за 30 секунд — убиваем его
+			cmd.Process.Kill()
+			return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
+		default:
+			// Обновляем прогресс в главном потоке
+			value := float64(i) / 100
+			text := fmt.Sprintf("Загрузка... %d%%", i)
+			fyne.Do(func() {
+				progress.SetValue(value)
+				statusLabel.SetText(text)
+			})
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 
-	progress.SetValue(1.0)
-	statusLabel.SetText("✅ Загрузка успешно завершена!")
+	// Если загрузка затянулась — ждём завершения
+	<-done
+	if err != nil {
+		return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
+	}
+	fyne.Do(func() {
+		progress.SetValue(1.0)
+		statusLabel.SetText("✅ Загрузка успешно завершена!")
+	})
 	return nil
 }
 
@@ -289,7 +314,7 @@ func main() {
 		items := make([]string, len(boards))
 		for i, b := range boards {
 			label := b.Port
-			if b.FQBN != "" {
+			if b.FQBN != "" && strings.Count(b.FQBN, ":") >= 2 {
 				label += " (" + b.FQBN + ")"
 			} else {
 				label += " (тип не определён)"
@@ -324,11 +349,25 @@ func main() {
 			}
 		}
 
+		// Проверяем, установлено ли ядро
+		cmd := exec.Command("arduino-cli", "core", "list")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Run()
+		coreName := strings.Split(fqbn, ":")[0] + ":" + strings.Split(fqbn, ":")[1]
+		if !strings.Contains(out.String(), coreName) {
+			dialog.ShowError(fmt.Errorf("ядро %s не установлено. Установите его через arduino-cli или скопируйте папку packages", coreName), w)
+			return
+		}
+
 		statusLabel.SetText("Начинаем загрузку...")
+		progress.SetValue(0)
 		err := uploadWithProgress(hexPath, portPath, fqbn, progress, statusLabel)
 		if err != nil {
-			statusLabel.SetText("❌ Ошибка загрузки")
-			progress.SetValue(0)
+			fyne.Do(func() {
+				statusLabel.SetText("❌ Ошибка загрузки")
+				progress.SetValue(0)
+			})
 			dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
 			return
 		}
@@ -373,11 +412,13 @@ func main() {
 func selectBoard(board BoardInfo, portPath *string, fqbn *string, portLabel *widget.Label, statusLabel *widget.Label, w fyne.Window) {
 	*portPath = board.Port
 	portLabel.SetText(board.Port)
-	if board.FQBN != "" {
+	// Проверяем, что FQBN действительно похож на FQBN (содержит двоеточия)
+	if board.FQBN != "" && strings.Count(board.FQBN, ":") >= 2 {
 		*fqbn = board.FQBN
 		portLabel.SetText(board.Port + " (" + board.FQBN + ")")
 		statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
 	} else {
+		// Принудительно показываем диалог выбора FQBN
 		statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
 		showFQBNInputDialog(w, fqbn, statusLabel)
 		if *fqbn != "" {
