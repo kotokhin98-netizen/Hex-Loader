@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -18,17 +17,6 @@ import (
 type BoardInfo struct {
 	Port string
 	FQBN string
-}
-
-// ArduinoBoardList соответствует JSON-выводу arduino-cli board list --format=json
-type ArduinoBoardList struct {
-	Boards []struct {
-		Port string `json:"port"`
-		MatchingBoards []struct {
-			Name string `json:"name"`
-			FQBN string `json:"fqbn"`
-		} `json:"matching_boards"`
-	} `json:"boards"`
 }
 
 func main() {
@@ -71,13 +59,11 @@ func main() {
 			return
 		}
 
-		// Если одна плата
 		if len(boards) == 1 {
 			selectBoard(boards[0], &portPath, &fqbn, portLabel, statusLabel, w)
 			return
 		}
 
-		// Если несколько — показываем список
 		items := make([]string, len(boards))
 		for i, b := range boards {
 			label := b.Port
@@ -89,7 +75,6 @@ func main() {
 			items[i] = label
 		}
 		selected := widget.NewSelect(items, func(s string) {
-			// Находим выбранную плату по порту (первая часть до пробела)
 			port := strings.Split(s, " ")[0]
 			for _, b := range boards {
 				if b.Port == port {
@@ -111,7 +96,6 @@ func main() {
 			return
 		}
 		if fqbn == "" {
-			// Если FQBN не задан, предлагаем выбрать вручную
 			showFQBNInputDialog(w, &fqbn, statusLabel)
 			if fqbn == "" {
 				return
@@ -142,28 +126,26 @@ func main() {
 	w.ShowAndRun()
 }
 
-// selectBoard обрабатывает выбор платы: устанавливает порт и FQBN, если известен
 func selectBoard(board BoardInfo, portPath *string, fqbn *string, portLabel *widget.Label, statusLabel *widget.Label, w fyne.Window) {
-    *portPath = board.Port
-    portLabel.SetText(board.Port)
-    if board.FQBN != "" {
-        *fqbn = board.FQBN
-        portLabel.SetText(board.Port + " (" + board.FQBN + ")")
-        statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
-    } else {
-        statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
-        showFQBNInputDialog(w, fqbn, statusLabel)
-        if *fqbn != "" {
-            portLabel.SetText(board.Port + " (" + *fqbn + ")")
-            statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
-        } else {
-            portLabel.SetText(board.Port + " (тип не выбран)")
-            statusLabel.SetText("FQBN не выбран")
-        }
-    }
+	*portPath = board.Port
+	portLabel.SetText(board.Port)
+	if board.FQBN != "" {
+		*fqbn = board.FQBN
+		portLabel.SetText(board.Port + " (" + board.FQBN + ")")
+		statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
+	} else {
+		statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
+		showFQBNInputDialog(w, fqbn, statusLabel)
+		if *fqbn != "" {
+			portLabel.SetText(board.Port + " (" + *fqbn + ")")
+			statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
+		} else {
+			portLabel.SetText(board.Port + " (тип не выбран)")
+			statusLabel.SetText("FQBN не выбран")
+		}
+	}
 }
 
-// showFQBNInputDialog показывает диалог выбора FQBN из списка или ввода своего
 func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label) {
 	commonFQBNs := []string{
 		"arduino:avr:uno",
@@ -194,9 +176,9 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 	dialog.ShowCustom("Выбор FQBN", "OK", content, w)
 }
 
-// getAvailableBoards возвращает список плат через JSON-парсинг
+// getAvailableBoards возвращает список плат через текстовый парсинг
 func getAvailableBoards() ([]BoardInfo, error) {
-	cmd := exec.Command("arduino-cli", "board", "list", "--format=json")
+	cmd := exec.Command("arduino-cli", "board", "list")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -204,34 +186,33 @@ func getAvailableBoards() ([]BoardInfo, error) {
 		return nil, fmt.Errorf("ошибка запуска arduino-cli: %v", err)
 	}
 
-	var result ArduinoBoardList
-	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
-		return nil, fmt.Errorf("ошибка парсинга JSON: %v, вывод: %s", err, out.String())
-	}
-
+	lines := strings.Split(out.String(), "\n")
 	var boards []BoardInfo
-	for _, board := range result.Boards {
-		if board.Port == "" {
+	for _, line := range lines {
+		if !strings.Contains(line, "/dev/") && !strings.Contains(line, "COM") {
 			continue
 		}
-		if len(board.MatchingBoards) > 0 {
-			// Берём первую совпадающую плату
-			boards = append(boards, BoardInfo{
-				Port: board.Port,
-				FQBN: board.MatchingBoards[0].FQBN,
-			})
-		} else {
-			// Плата не распознана, но порт есть
-			boards = append(boards, BoardInfo{
-				Port: board.Port,
-				FQBN: "",
-			})
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
 		}
+		port := fields[0]
+		if !strings.HasPrefix(port, "/dev/") && !strings.HasPrefix(port, "COM") {
+			continue
+		}
+		// Ищем FQBN
+		var fqbn string
+		for _, field := range fields {
+			if strings.Count(field, ":") >= 2 {
+				fqbn = field
+				break
+			}
+		}
+		boards = append(boards, BoardInfo{Port: port, FQBN: fqbn})
 	}
 	return boards, nil
 }
 
-// uploadHex выполняет загрузку HEX файла
 func uploadHex(hexPath, portPath, fqbn string) error {
 	cmd := exec.Command(
 		"arduino-cli",
