@@ -453,11 +453,18 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 		}
 	}
 
+	// Создаём диалог заранее, чтобы иметь доступ к его методам
+	var dialogObj *dialog.CustomDialog
+
 	// Большая кнопка OK с обводкой
 	okButton := newButtonWithBorder("✅ OK", func() {
 		if *fqbn == "" && len(commonFQBNs) > 0 {
 			*fqbn = commonFQBNs[0]
 			statusLabel.SetText("FQBN выбран: " + *fqbn)
+		}
+		// Закрываем диалог
+		if dialogObj != nil {
+			dialogObj.Hide()
 		}
 	})
 
@@ -466,12 +473,13 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 		selectWidget,
 		widget.NewLabel("или"),
 		entry,
-		container.NewCenter(okButton), // Центрируем кнопку
+		container.NewCenter(okButton),
 	)
 
-	dialog := dialog.NewCustom("Выбор FQBN", "", content, w)
-	dialog.Resize(fyne.NewSize(500, 350))
-	dialog.Show()
+	// Создаём диалог и сохраняем ссылку
+	dialogObj = dialog.NewCustom("Выбор FQBN", "", content, w)
+	dialogObj.Resize(fyne.NewSize(500, 350))
+	dialogObj.Show()
 }
 
 // getAvailableBoards возвращает список плат через текстовый парсинг
