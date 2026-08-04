@@ -13,10 +13,10 @@ arduino-cli board list
 
 ```
 Скачивание пропущенных инструментов builtin:serial-discovery@1.5.2...
-builtin:serial-discovery@1.5.2 Ответ сервера: 403 Forbidden                                                    
+builtin:serial-discovery@1.5.2 Ответ сервера: 403 Forbidden
 Ошибка при инициализации экземпляра: скачивание builtin:serial-discovery@1.5.2 инструмента: Ответ сервера: 403 Forbidden
 Скачивание пропущенных инструментов builtin:mdns-discovery@1.1.0...
-builtin:mdns-discovery@1.1.0 Ответ сервера: 403 Forbidden                                                      
+builtin:mdns-discovery@1.1.0 Ответ сервера: 403 Forbidden
 Ошибка при инициализации экземпляра: скачивание builtin:mdns-discovery@1.1.0 инструмента: Ответ сервера: 403 Forbidden
 Порт         Протокол Тип               Наименование платы FQBN Ядро
 /dev/ttyUSB0 serial   Serial Port (USB) Неизвестный
