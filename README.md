@@ -52,3 +52,22 @@ sudo apt install build-essential golang libx11-dev libxrandr-dev libxinerama-dev
 ```
 
 Создание и сборка проекта теже, что и для Alt Linux p11
+
+### Arduino CLI не может загрузить индексы в РФ
+
+Варианты решения проблемы:
+1. Используйте системный VPN
+2. Скачайте вручную файлы library_index.tar.bz2 и package_index.tar.bz2 по ссылкам
+    - https://downloads.arduino.cc/packages/package_index.tar.bz2
+    - https://downloads.arduino.cc/libraries/library_index.tar.bz2
+    и перенесите с другого компьютера содержимое /home/user/.arduino15/packages/ и назначте права:
+```shell
+# Восстановить владельца и права для всех файлов в ~/.arduino15/
+chown -R $USER:$USER ~/.arduino15/
+find ~/.arduino15/packages/ -type f -exec chmod 644 {} \;
+find ~/.arduino15/packages/ -type d -exec chmod 755 {} \;
+find ~/.arduino15/packages/ -name "avrdude" -exec chmod +x {} \;
+find ~/.arduino15/packages/ -name "*.so*" -exec chmod +x {} \;
+# И другие исполняемые файлы (например, dfu-programmer, bossac и т.д.)
+find ~/.arduino15/packages/ -path "*/bin/*" -exec chmod +x {} \;
+```
