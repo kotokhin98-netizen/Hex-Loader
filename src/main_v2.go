@@ -144,24 +144,23 @@ func main() {
 
 // selectBoard обрабатывает выбор платы: устанавливает порт и FQBN, если известен
 func selectBoard(board BoardInfo, portPath *string, fqbn *string, portLabel *widget.Label, statusLabel *widget.Label, w fyne.Window) {
-	*portPath = board.Port
-	*portLabel.SetText(board.Port)
-	if board.FQBN != "" {
-		*fqbn = board.FQBN
-		portLabel.SetText(board.Port + " (" + board.FQBN + ")")
-		statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
-	} else {
-		// Если FQBN не определён, предлагаем выбрать вручную
-		statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
-		showFQBNInputDialog(w, fqbn, statusLabel)
-		if *fqbn != "" {
-			portLabel.SetText(board.Port + " (" + *fqbn + ")")
-			statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
-		} else {
-			portLabel.SetText(board.Port + " (тип не выбран)")
-			statusLabel.SetText("FQBN не выбран")
-		}
-	}
+    *portPath = board.Port
+    portLabel.SetText(board.Port)
+    if board.FQBN != "" {
+        *fqbn = board.FQBN
+        portLabel.SetText(board.Port + " (" + board.FQBN + ")")
+        statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
+    } else {
+        statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
+        showFQBNInputDialog(w, fqbn, statusLabel)
+        if *fqbn != "" {
+            portLabel.SetText(board.Port + " (" + *fqbn + ")")
+            statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
+        } else {
+            portLabel.SetText(board.Port + " (тип не выбран)")
+            statusLabel.SetText("FQBN не выбран")
+        }
+    }
 }
 
 // showFQBNInputDialog показывает диалог выбора FQBN из списка или ввода своего
