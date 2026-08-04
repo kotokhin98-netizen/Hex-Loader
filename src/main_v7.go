@@ -187,6 +187,7 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 }
 
 // uploadWithProgress выполняет загрузку с анимацией (не процент)
+// uploadWithProgress выполняет загрузку с анимацией (не процент)
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
     cmd := exec.Command(
         "arduino-cli",
