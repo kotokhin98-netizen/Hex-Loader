@@ -25,33 +25,10 @@ func checkArduinoCLI() error {
 	return err
 }
 
-// showErrorAndQuit показывает диалог с ошибкой и кнопкой для выхода
-func showErrorAndQuit(a fyne.App, w fyne.Window, err error) {
-	label := widget.NewLabel(
-		"❌ arduino-cli не найден.\n\n" +
-			err.Error() +
-			"\n\nУстановите arduino-cli и убедитесь, что он доступен в PATH.\n" +
-			"После установки перезапустите программу.",
-	)
-	btnQuit := widget.NewButton("Выйти", func() {
-		a.Quit()
-	})
-	content := container.NewVBox(label, btnQuit)
-	dialog := dialog.NewCustom("Ошибка", "", content, w)
-	dialog.Resize(fyne.NewSize(450, 200))
-	dialog.Show()
-}
-
 func main() {
 	a := app.NewWithID("com.example.hexloader")
 	w := a.NewWindow("Загрузчик HEX в Arduino")
 	w.Resize(fyne.NewSize(550, 280))
-
-	// Проверка наличия arduino-cli
-	if err := checkArduinoCLI(); err != nil {
-		showErrorAndQuit(a, w, err)
-		return
-	}
 
 	var hexPath string
 	var portPath string
@@ -61,6 +38,7 @@ func main() {
 	portLabel := widget.NewLabel("Порт не выбран")
 	statusLabel := widget.NewLabel("Готов к работе")
 
+	// Кнопки
 	btnSelectHex := widget.NewButton("Выбрать HEX", func() {
 		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -141,6 +119,16 @@ func main() {
 		dialog.ShowInformation("Успех", "Прошивка загружена на плату.", w)
 	})
 
+	// Проверяем наличие arduino-cli ДО создания содержимого
+	// Если нет — отключаем кнопки и показываем статус
+	if err := checkArduinoCLI(); err != nil {
+		btnSelectHex.Disable()
+		btnSelectPort.Disable()
+		btnUpload.Disable()
+		statusLabel.SetText("❌ arduino-cli не найден")
+	}
+
+	// Собираем интерфейс
 	content := container.NewVBox(
 		widget.NewLabel("Загрузчик HEX файлов в Arduino"),
 		widget.NewSeparator(),
