@@ -43,7 +43,7 @@ func showErrorAndQuit(a fyne.App, w fyne.Window, err error) {
 }
 
 func main() {
-	a := app.New()
+	a := app.NewWithID("com.example.hexloader")
 	w := a.NewWindow("Загрузчик HEX в Arduino")
 	w.Resize(fyne.NewSize(550, 280))
 
