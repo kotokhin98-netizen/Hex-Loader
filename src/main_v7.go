@@ -187,71 +187,58 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 }
 
 // uploadWithProgress выполняет загрузку с обновлением прогресс-бара
+// uploadWithProgress выполняет загрузку с анимацией (не процент)
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
-	cmd := exec.Command(
-		"arduino-cli",
-		"upload",
-		"-p", portPath,
-		"--fqbn", fqbn,
-		"--input-file", hexPath,
-	)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+    cmd := exec.Command(
+        "arduino-cli",
+        "upload",
+        "-p", portPath,
+        "--fqbn", fqbn,
+        "--input-file", hexPath,
+    )
+    var stderr bytes.Buffer
+    cmd.Stderr = &stderr
 
-	// Запускаем команду
-	err := cmd.Start()
-	if err != nil {
-		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
-	}
+    err := cmd.Start()
+    if err != nil {
+        return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
+    }
 
-	// Канал для отслеживания завершения
-	done := make(chan bool)
-	go func() {
-		err = cmd.Wait()
-		done <- true
-	}()
+    done := make(chan bool)
+    go func() {
+        err = cmd.Wait()
+        done <- true
+    }()
 
-	// Прогресс-бар с таймаутом (максимум 30 секунд)
-	timeout := time.After(30 * time.Second)
-	for i := 0; i <= 100; i += 5 {
-		select {
-		case <-done:
-			// Команда завершилась
-			if err != nil {
-				return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
-			}
-			// Обновляем UI в главном потоке
-			fyne.Do(func() {
-				progress.SetValue(1.0)
-				statusLabel.SetText("✅ Загрузка успешно завершена!")
-			})
-			return nil
-		case <-timeout:
-			// Если процесс не завершился за 30 секунд — убиваем его
-			cmd.Process.Kill()
-			return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
-		default:
-			// Обновляем прогресс в главном потоке
-			value := float64(i) / 100
-			text := fmt.Sprintf("Загрузка... %d%%", i)
-			fyne.Do(func() {
-				progress.SetValue(value)
-				statusLabel.SetText(text)
-			})
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
+    // Анимация загрузки
+    dots := []string{"", ".", "..", "..."}
+    dotIndex := 0
+    timeout := time.After(30 * time.Second)
 
-	// Если загрузка затянулась — ждём завершения
-	<-done
-	if err != nil {
-		return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
-	}
-	fyne.Do(func() {
-		progress.SetValue(1.0)
-		statusLabel.SetText("✅ Загрузка успешно завершена!")
-	})
-	return nil
+    for {
+        select {
+        case <-done:
+            if err != nil {
+                return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
+            }
+            fyne.Do(func() {
+                progress.SetValue(1.0)
+                statusLabel.SetText("✅ Загрузка успешно завершена!")
+            })
+            return nil
+        case <-timeout:
+            cmd.Process.Kill()
+            return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
+        default:
+            fyne.Do(func() {
+                // Показываем неопределённый прогресс (50%)
+                progress.SetValue(0.5)
+                statusLabel.SetText("Загрузка" + dots[dotIndex])
+            })
+            dotIndex = (dotIndex + 1) % len(dots)
+            time.Sleep(500 * time.Millisecond)
+        }
+    }
 }
 
 func main() {
