@@ -218,7 +218,6 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
     for {
         select {
         case <-done:
-            // Ждём минимум 2 секунды, чтобы пользователь увидел анимацию
             elapsed := time.Since(startTime)
             if elapsed < 2*time.Second {
                 time.Sleep(2*time.Second - elapsed)
@@ -228,7 +227,9 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
             }
             fyne.Do(func() {
                 progress.SetValue(1.0)
+                progress.Refresh()
                 statusLabel.SetText("✅ Загрузка успешно завершена!")
+                statusLabel.Refresh()
             })
             return nil
         case <-timeout:
@@ -237,7 +238,9 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
         default:
             fyne.Do(func() {
                 progress.SetValue(0.5)
+                progress.Refresh()
                 statusLabel.SetText("Загрузка " + dots[dotIndex])
+                statusLabel.Refresh()
             })
             dotIndex = (dotIndex + 1) % len(dots)
             time.Sleep(200 * time.Millisecond)
