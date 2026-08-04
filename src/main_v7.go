@@ -186,7 +186,6 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 	dialog.Show()
 }
 
-// uploadWithProgress выполняет загрузку с обновлением прогресс-бара
 // uploadWithProgress выполняет загрузку с анимацией (не процент)
 func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.ProgressBar, statusLabel *widget.Label) error {
     cmd := exec.Command(
@@ -210,7 +209,7 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
         done <- true
     }()
 
-    // Анимация загрузки
+    // Анимация загрузки (точки)
     dots := []string{"", ".", "..", "..."}
     dotIndex := 0
     timeout := time.After(30 * time.Second)
@@ -230,8 +229,9 @@ func uploadWithProgress(hexPath, portPath, fqbn string, progress *widget.Progres
             cmd.Process.Kill()
             return fmt.Errorf("таймаут загрузки (превышено 30 секунд)")
         default:
+            // Обновляем анимацию каждые 500 мс
             fyne.Do(func() {
-                // Показываем неопределённый прогресс (50%)
+                // Показываем прогресс 50% (неопределённый)
                 progress.SetValue(0.5)
                 statusLabel.SetText("Загрузка" + dots[dotIndex])
             })
