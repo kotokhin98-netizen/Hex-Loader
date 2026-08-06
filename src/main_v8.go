@@ -186,12 +186,14 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
-	// СРАЗУ обновляем статус
+	// 1. СРАЗУ обновляем статус (синхронно, в главной горутине)
 	statusLabel.SetText("⏳ Подождите, идёт загрузка...")
 	statusLabel.Refresh()
 
+	// 2. Канал для результата
 	result := make(chan error)
 
+	// 3. Запускаем загрузку в отдельной горутине
 	go func() {
 		cmd := exec.Command(
 			"arduino-cli",
@@ -211,8 +213,10 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 		result <- nil
 	}()
 
+	// 4. Ждём завершения
 	err := <-result
 
+	// 5. Обновляем статус после завершения
 	if err != nil {
 		statusLabel.SetText("❌ Ошибка загрузки")
 		statusLabel.Refresh()
@@ -254,6 +258,7 @@ func main() {
 			hexPath = reader.URI().Path()
 			hexLabel.SetText(hexPath)
 			statusLabel.SetText("HEX файл выбран")
+			statusLabel.Refresh()
 		}, w)
 		fileDialog.SetFilter(fileFilter)
 		fileDialog.Show()
@@ -337,6 +342,7 @@ func main() {
 		btnSelectPort.Disable()
 		btnUpload.Disable()
 		statusLabel.SetText("❌ arduino-cli не найден")
+		statusLabel.Refresh()
 	}
 
 	// Проверка прав на группы
@@ -348,6 +354,7 @@ func main() {
 			showPermissionWarning(a, w)
 		}()
 		statusLabel.SetText("⚠️ Нет прав на доступ к портам (нужна группа dialout)")
+		statusLabel.Refresh()
 	}
 
 	// Собираем интерфейс
