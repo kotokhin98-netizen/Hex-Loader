@@ -287,16 +287,13 @@ func main() {
 
 	// --- АВТООБНОВЛЕНИЕ ПОРТОВ ---
 	// Функция обновления портов
-	var currentBoards []BoardInfo
 	updatePorts := func() {
 		boards, err := getAvailableBoards()
 		if err != nil {
 			return
 		}
-		currentBoards = boards
 
 		if len(boards) == 0 {
-			// Если плат нет, показываем "Порт не выбран"
 			if portPath != "" {
 				portPath = ""
 				fqbn = ""
@@ -318,7 +315,6 @@ func main() {
 		}
 
 		if !portFound && len(boards) > 0 {
-			// Автоматически выбираем первую найденную плату
 			fyne.Do(func() {
 				selectBoard(boards[0], &portPath, &fqbn, portLabel, statusLabel, w)
 			})
