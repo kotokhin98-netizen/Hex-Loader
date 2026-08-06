@@ -186,44 +186,63 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
-	// Сразу показываем статус загрузки
-	statusLabel.SetText("⏳ Подождите, идёт загрузка...")
-	statusLabel.Refresh()
+	// Сразу показываем статус загрузки через fyne.Do
+	done := make(chan error)
 
-	cmd := exec.Command(
-		"arduino-cli",
-		"upload",
-		"-p", portPath,
-		"--fqbn", fqbn,
-		"--input-file", hexPath,
-	)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	go func() {
+		// Показываем статус в главной горутине
+		fyne.Do(func() {
+			statusLabel.SetText("⏳ Подождите, идёт загрузка...")
+			statusLabel.Refresh()
+		})
 
-	startTime := time.Now()
-	err := cmd.Start()
+		cmd := exec.Command(
+			"arduino-cli",
+			"upload",
+			"-p", portPath,
+			"--fqbn", fqbn,
+			"--input-file", hexPath,
+		)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+
+		startTime := time.Now()
+		err := cmd.Start()
+		if err != nil {
+			done <- fmt.Errorf("ошибка запуска arduino-cli: %v", err)
+			return
+		}
+
+		err = cmd.Wait()
+
+		// Минимальное время отображения статуса (1 секунда)
+		elapsed := time.Since(startTime)
+		if elapsed < 1*time.Second {
+			time.Sleep(1*time.Second - elapsed)
+		}
+
+		if err != nil {
+			done <- fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
+			return
+		}
+		done <- nil
+	}()
+
+	err := <-done
+
+	// Обновляем статус после завершения
 	if err != nil {
-		statusLabel.SetText("❌ Ошибка запуска arduino-cli")
+		fyne.Do(func() {
+			statusLabel.SetText("❌ Ошибка загрузки")
+			statusLabel.Refresh()
+		})
+		return err
+	}
+
+	fyne.Do(func() {
+		statusLabel.SetText("✅ Загрузка успешно завершена!")
 		statusLabel.Refresh()
-		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
-	}
-
-	err = cmd.Wait()
-
-	// Минимальное время отображения статуса (1 секунда)
-	elapsed := time.Since(startTime)
-	if elapsed < 1*time.Second {
-		time.Sleep(1*time.Second - elapsed)
-	}
-
-	if err != nil {
-		statusLabel.SetText("❌ Ошибка загрузки")
-		statusLabel.Refresh()
-		return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
-	}
-
-	statusLabel.SetText("✅ Загрузка успешно завершена!")
-	statusLabel.Refresh()
+	})
 	return nil
 }
 
@@ -332,7 +351,6 @@ func main() {
 			dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
 			return
 		}
-		// Убираем отдельное окно "Успех" — статус уже отображается в строке состояния
 	})
 
 	// Проверка arduino-cli
