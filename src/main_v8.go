@@ -186,19 +186,18 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
-	// 1. СРАЗУ обновляем статус (синхронно, в главной горутине)
-	statusLabel.SetText("⏳ Подождите, идёт загрузка...")
-	statusLabel.Refresh()
-
-	// 2. Принудительно обрабатываем события Fyne, чтобы UI точно обновился
-	// Небольшая задержка для гарантии
-	time.Sleep(50 * time.Millisecond)
-
-	// 3. Канал для результата
 	result := make(chan error)
 
-	// 4. Запускаем загрузку в отдельной горутине
 	go func() {
+		// Показываем статус через fyne.Do
+		fyne.Do(func() {
+			statusLabel.SetText("⏳ Подождите, идёт загрузка...")
+			statusLabel.Refresh()
+		})
+
+		// Небольшая задержка для отрисовки
+		time.Sleep(50 * time.Millisecond)
+
 		cmd := exec.Command(
 			"arduino-cli",
 			"upload",
@@ -217,18 +216,20 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 		result <- nil
 	}()
 
-	// 5. Ждём завершения загрузки
 	err := <-result
 
-	// 6. Обновляем статус после завершения
 	if err != nil {
-		statusLabel.SetText("❌ Ошибка загрузки")
-		statusLabel.Refresh()
+		fyne.Do(func() {
+			statusLabel.SetText("❌ Ошибка загрузки")
+			statusLabel.Refresh()
+		})
 		return err
 	}
 
-	statusLabel.SetText("✅ Загрузка успешно завершена!")
-	statusLabel.Refresh()
+	fyne.Do(func() {
+		statusLabel.SetText("✅ Загрузка успешно завершена!")
+		statusLabel.Refresh()
+	})
 	return nil
 }
 
@@ -262,7 +263,6 @@ func main() {
 			hexPath = reader.URI().Path()
 			hexLabel.SetText(hexPath)
 			statusLabel.SetText("HEX файл выбран")
-			statusLabel.Refresh()
 		}, w)
 		fileDialog.SetFilter(fileFilter)
 		fileDialog.Show()
@@ -333,11 +333,15 @@ func main() {
 			return
 		}
 
-		err := uploadWithProgress(hexPath, portPath, fqbn, statusLabel)
-		if err != nil {
-			dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
-			return
-		}
+		// Запускаем процесс загрузки в фоновой горутине
+		go func() {
+			err := uploadWithProgress(hexPath, portPath, fqbn, statusLabel)
+			if err != nil {
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
+				})
+			}
+		}()
 	})
 
 	// Проверка arduino-cli
@@ -346,7 +350,6 @@ func main() {
 		btnSelectPort.Disable()
 		btnUpload.Disable()
 		statusLabel.SetText("❌ arduino-cli не найден")
-		statusLabel.Refresh()
 	}
 
 	// Проверка прав на группы
@@ -358,7 +361,6 @@ func main() {
 			showPermissionWarning(a, w)
 		}()
 		statusLabel.SetText("⚠️ Нет прав на доступ к портам (нужна группа dialout)")
-		statusLabel.Refresh()
 	}
 
 	// Собираем интерфейс
