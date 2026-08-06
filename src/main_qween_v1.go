@@ -9,7 +9,7 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
-	"time"
+	// "time" удален, так как он не используется
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -337,7 +337,10 @@ func main() {
 		})
 	})
 
-	btnUpload := newButtonWithBorder("⬆️ Загрузить", func() {
+	// ИСПРАВЛЕНО: Сначала объявляем переменную, затем присваиваем ей значение.
+	// Это позволяет использовать btnUpload внутри самого обработчика.
+	var btnUpload *buttonWithBorder
+	btnUpload = newButtonWithBorder("⬆️ Загрузить", func() {
 		if hexPath == "" {
 			fyne.Do(func() {
 				dialog.ShowInformation("Ошибка", "Сначала выберите HEX файл.", w)
