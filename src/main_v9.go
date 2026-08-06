@@ -25,7 +25,7 @@ type BoardInfo struct {
 	FQBN string
 }
 
-// myTheme — кастомная тема с увеличенным размером
+// myTheme — кастомная тема с увеличенным размером и убранной тенью
 type myTheme struct {
 	fyne.Theme
 }
@@ -47,6 +47,8 @@ func (t myTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) colo
 		return color.NRGBA{R: 0x88, G: 0x88, B: 0x88, A: 0xFF}
 	case theme.ColorNameBackground:
 		return color.NRGBA{R: 0xE0, G: 0xE0, B: 0xE0, A: 0xFF}
+	case theme.ColorNameShadow: // Добавляем управление тенью
+		return color.Transparent // Делаем тень прозрачной
 	default:
 		return t.Theme.Color(name, variant)
 	}
@@ -371,7 +373,7 @@ func main() {
 
 	// Собираем интерфейс
 	content := container.NewVBox(
-		title, // ← Заголовок через canvas.NewText
+		title,
 		widget.NewSeparator(),
 		container.NewHBox(btnSelectHex, hexLabel),
 		container.NewHBox(btnSelectPort, portLabel),
