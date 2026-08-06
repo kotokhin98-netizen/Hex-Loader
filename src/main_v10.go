@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
-	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -16,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -187,90 +186,6 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 	dialog.Show()
 }
 
-// showFileOpenDialog — кастомный диалог выбора файла
-func showFileOpenDialog(w fyne.Window, onSelected func(string)) {
-	var selectedPath string
-
-	// Поле для отображения выбранного файла
-	fileEntry := widget.NewEntry()
-	fileEntry.SetPlaceHolder("Выберите HEX файл...")
-	fileEntry.Disable()
-
-	// Список файлов в текущей директории
-	fileList := widget.NewList(
-		func() int { return 0 },
-		func() fyne.CanvasObject { return widget.NewLabel("") },
-		func(id widget.ListItemID, obj fyne.CanvasObject) {},
-	)
-
-	// Текущая директория
-	currentDir := "/home"
-
-	// Функция обновления списка файлов
-	updateFileList := func(dir string) {
-		entries, err := os.ReadDir(dir)
-		if err != nil {
-			return
-		}
-		var items []string
-		for _, entry := range entries {
-			if entry.IsDir() {
-				items = append(items, "📁 "+entry.Name())
-			} else if strings.HasSuffix(strings.ToLower(entry.Name()), ".hex") {
-				items = append(items, "📄 "+entry.Name())
-			}
-		}
-		fileList.Length = func() int { return len(items) }
-		fileList.CreateItem = func() fyne.CanvasObject { return widget.NewLabel("") }
-		fileList.UpdateItem = func(id widget.ListItemID, obj fyne.CanvasObject) {
-			if id < len(items) {
-				obj.(*widget.Label).SetText(items[id])
-			}
-		}
-		fileList.Refresh()
-	}
-
-	// Кнопки с обводкой
-	btnOpen := newButtonWithBorder("📂 Открыть", func() {
-		if selectedPath != "" && strings.HasSuffix(strings.ToLower(selectedPath), ".hex") {
-			onSelected(selectedPath)
-		}
-	})
-
-	btnCancel := newButtonWithBorder("❌ Отмена", func() {
-		onSelected("")
-	})
-
-	btnUp := newButtonWithBorder("⬆ Вверх", func() {
-		parent := filepath.Dir(currentDir)
-		if parent != currentDir {
-			currentDir = parent
-			updateFileList(currentDir)
-		}
-	})
-
-	// Сборка интерфейса диалога
-	content := container.NewBorder(
-		container.NewVBox(
-			widget.NewLabel("Выберите HEX файл:"),
-			fileEntry,
-			container.NewHBox(btnUp, widget.NewLabel("")),
-		),
-		container.NewHBox(
-			btnCancel,
-			container.NewCenter(btnOpen),
-		),
-		nil,
-		nil,
-		fileList,
-	)
-
-	// Создаём диалог
-	dialog := dialog.NewCustom("Открыть файл", "", content, w)
-	dialog.Resize(fyne.NewSize(600, 400))
-	dialog.Show()
-}
-
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
 	result := make(chan error)
@@ -339,15 +254,22 @@ func main() {
 	title.TextStyle.Bold = true
 	title.Alignment = fyne.TextAlignCenter
 
-	// Кнопка выбора HEX с кастомным диалогом
+	// Кнопка выбора HEX со стандартным диалогом и фильтром
 	btnSelectHex := newButtonWithBorder("📂 Выбрать HEX", func() {
-		showFileOpenDialog(w, func(path string) {
-			if path != "" {
-				hexPath = path
-				hexLabel.SetText(path)
-				statusLabel.SetText("HEX файл выбран")
+		fileFilter := storage.NewExtensionFileFilter([]string{".hex"})
+		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, w)
+				return
 			}
-		})
+			if reader == nil {
+				return
+			}
+			defer reader.Close()
+			hexPath = reader.URI().Path()
+			hexLabel.SetText(hexPath)
+			statusLabel.SetText("HEX файл выбран")
+		}, w)
 	})
 
 	btnSelectPort := newButtonWithBorder("🔌 Выбрать порт", func() {
