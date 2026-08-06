@@ -186,6 +186,10 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
+	// Сразу показываем статус загрузки
+	statusLabel.SetText("⏳ Подождите, идёт загрузка...")
+	statusLabel.Refresh()
+
 	cmd := exec.Command(
 		"arduino-cli",
 		"upload",
@@ -196,59 +200,30 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	// Создаём канал для остановки анимации
-	stopAnimation := make(chan bool)
-
-	// Запускаем анимацию статуса в отдельной горутине
-	go func() {
-		dots := []string{"", ".", "..", "..."}
-		dotIndex := 0
-		for {
-			select {
-			case <-stopAnimation:
-				return
-			default:
-				fyne.Do(func() {
-					statusLabel.SetText("⏳ Подождите, идёт загрузка" + dots[dotIndex])
-					statusLabel.Refresh()
-				})
-				dotIndex = (dotIndex + 1) % len(dots)
-				time.Sleep(300 * time.Millisecond)
-			}
-		}
-	}()
-
-	// Запускаем команду и ждём завершения
 	startTime := time.Now()
 	err := cmd.Start()
 	if err != nil {
-		stopAnimation <- true
+		statusLabel.SetText("❌ Ошибка запуска arduino-cli")
+		statusLabel.Refresh()
 		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
 	}
 
 	err = cmd.Wait()
 
-	// Останавливаем анимацию
-	stopAnimation <- true
-
-	// Ждём минимум 2 секунды для отображения статуса
+	// Минимальное время отображения статуса (1 секунда)
 	elapsed := time.Since(startTime)
-	if elapsed < 2*time.Second {
-		time.Sleep(2*time.Second - elapsed)
+	if elapsed < 1*time.Second {
+		time.Sleep(1*time.Second - elapsed)
 	}
 
 	if err != nil {
-		fyne.Do(func() {
-			statusLabel.SetText("❌ Ошибка загрузки")
-			statusLabel.Refresh()
-		})
+		statusLabel.SetText("❌ Ошибка загрузки")
+		statusLabel.Refresh()
 		return fmt.Errorf("ошибка загрузки: %v: %s", err, stderr.String())
 	}
 
-	fyne.Do(func() {
-		statusLabel.SetText("✅ Загрузка успешно завершена!")
-		statusLabel.Refresh()
-	})
+	statusLabel.SetText("✅ Загрузка успешно завершена!")
+	statusLabel.Refresh()
 	return nil
 }
 
@@ -282,7 +257,6 @@ func main() {
 			hexPath = reader.URI().Path()
 			hexLabel.SetText(hexPath)
 			statusLabel.SetText("HEX файл выбран")
-			statusLabel.Refresh()
 		}, w)
 		fileDialog.SetFilter(fileFilter)
 		fileDialog.Show()
@@ -358,7 +332,7 @@ func main() {
 			dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
 			return
 		}
-		dialog.ShowInformation("Успех", "✅ Прошивка загружена на плату.", w)
+		// Убираем отдельное окно "Успех" — статус уже отображается в строке состояния
 	})
 
 	// Проверка arduino-cli
