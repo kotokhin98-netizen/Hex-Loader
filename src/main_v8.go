@@ -186,21 +186,13 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 
 // uploadWithProgress выполняет загрузку с отображением статуса
 func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Label) error {
-	// Канал для результата
+	// СРАЗУ обновляем статус
+	statusLabel.SetText("⏳ Подождите, идёт загрузка...")
+	statusLabel.Refresh()
+
 	result := make(chan error)
 
-	// Запускаем загрузку в отдельной горутине
 	go func() {
-		// 1. Сначала обновляем статус через fyne.Do
-		fyne.Do(func() {
-			statusLabel.SetText("⏳ Подождите, идёт загрузка...")
-			statusLabel.Refresh()
-		})
-
-		// 2. Даём время на отрисовку (100 мс)
-		time.Sleep(100 * time.Millisecond)
-
-		// 3. Запускаем команду
 		cmd := exec.Command(
 			"arduino-cli",
 			"upload",
@@ -219,22 +211,16 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 		result <- nil
 	}()
 
-	// Ждём завершения
 	err := <-result
 
-	// Обновляем статус после завершения
 	if err != nil {
-		fyne.Do(func() {
-			statusLabel.SetText("❌ Ошибка загрузки")
-			statusLabel.Refresh()
-		})
+		statusLabel.SetText("❌ Ошибка загрузки")
+		statusLabel.Refresh()
 		return err
 	}
 
-	fyne.Do(func() {
-		statusLabel.SetText("✅ Загрузка успешно завершена!")
-		statusLabel.Refresh()
-	})
+	statusLabel.SetText("✅ Загрузка успешно завершена!")
+	statusLabel.Refresh()
 	return nil
 }
 
