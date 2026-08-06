@@ -196,22 +196,42 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	// Устанавливаем статус "Подождите, идёт загрузка..."
-	fyne.Do(func() {
-		statusLabel.SetText("⏳ Подождите, идёт загрузка...")
-		statusLabel.Refresh()
-	})
+	// Создаём канал для остановки анимации
+	stopAnimation := make(chan bool)
+
+	// Запускаем анимацию статуса в отдельной горутине
+	go func() {
+		dots := []string{"", ".", "..", "..."}
+		dotIndex := 0
+		for {
+			select {
+			case <-stopAnimation:
+				return
+			default:
+				fyne.Do(func() {
+					statusLabel.SetText("⏳ Подождите, идёт загрузка" + dots[dotIndex])
+					statusLabel.Refresh()
+				})
+				dotIndex = (dotIndex + 1) % len(dots)
+				time.Sleep(300 * time.Millisecond)
+			}
+		}
+	}()
 
 	// Запускаем команду и ждём завершения
 	startTime := time.Now()
 	err := cmd.Start()
 	if err != nil {
+		stopAnimation <- true
 		return fmt.Errorf("ошибка запуска arduino-cli: %v", err)
 	}
 
 	err = cmd.Wait()
 
-	// Минимальное время отображения статуса (2 секунды)
+	// Останавливаем анимацию
+	stopAnimation <- true
+
+	// Ждём минимум 2 секунды для отображения статуса
 	elapsed := time.Since(startTime)
 	if elapsed < 2*time.Second {
 		time.Sleep(2*time.Second - elapsed)
