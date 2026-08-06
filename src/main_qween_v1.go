@@ -2,14 +2,12 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"image/color"
 	"os/exec"
 	"os/user"
-	"runtime"
 	"strings"
-	// "time" удален, так как он не используется
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -25,22 +23,6 @@ import (
 type BoardInfo struct {
 	Port string
 	FQBN string
-}
-
-// PortInfo для парсинга JSON вывода arduino-cli
-type PortInfo struct {
-	Port struct {
-		Address string `json:"address"`
-	} `json:"port"`
-	MatchingBoards []struct {
-		FQBN string `json:"fqbn"`
-	} `json:"matching_boards"`
-}
-
-// CoreInfo для парсинга JSON вывода arduino-cli core list
-type CoreInfo struct {
-	ID        string `json:"id"`
-	Installed string `json:"installed"`
 }
 
 // myTheme — кастомная тема с увеличенным размером
@@ -170,8 +152,7 @@ func checkUserInGroup(groupName string) (bool, error) {
 		return false, err
 	}
 
-	// Используем id -Gn для более надежного получения списка групп
-	cmd := exec.Command("id", "-Gn", currentUser.Username)
+	cmd := exec.Command("groups", currentUser.Username)
 	output, err := cmd.Output()
 	if err != nil {
 		return false, err
@@ -187,8 +168,6 @@ func checkUserInGroup(groupName string) (bool, error) {
 
 // showPermissionWarning показывает предупреждение о правах
 func showPermissionWarning(a fyne.App, w fyne.Window) {
-	var d dialog.Dialog // Переменная для ссылки на диалог
-	
 	label := widget.NewLabel(
 		"⚠️ У вас нет прав для работы с последовательными портами.\n\n" +
 			"Чтобы Hex Loader мог определять и прошивать платы,\n" +
@@ -198,17 +177,11 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 			"Вы всё равно можете использовать программу,\n" +
 			"но порты могут не определяться.",
 	)
-	
-	btnOk := widget.NewButton("Понятно", func() {
-		if d != nil {
-			d.Hide() // Закрываем диалог при клике
-		}
-	})
-	
+	btnOk := widget.NewButton("Понятно", func() {})
 	content := container.NewVBox(label, btnOk)
-	d = dialog.NewCustom("Внимание", "", content, w)
-	d.Resize(fyne.NewSize(500, 300))
-	d.Show()
+	dialog := dialog.NewCustom("Внимание", "", content, w)
+	dialog.Resize(fyne.NewSize(500, 300))
+	dialog.Show()
 }
 
 // uploadWithProgress выполняет загрузку с отображением статуса
@@ -216,10 +189,14 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 	result := make(chan error)
 
 	go func() {
-		// Показываем статус через fyne.Do (безопасно для UI)
+		// Показываем статус через fyne.Do
 		fyne.Do(func() {
 			statusLabel.SetText("⏳ Подождите, идёт загрузка...")
+			statusLabel.Refresh()
 		})
+
+		// Небольшая задержка для отрисовки
+		time.Sleep(50 * time.Millisecond)
 
 		cmd := exec.Command(
 			"arduino-cli",
@@ -244,12 +221,14 @@ func uploadWithProgress(hexPath, portPath, fqbn string, statusLabel *widget.Labe
 	if err != nil {
 		fyne.Do(func() {
 			statusLabel.SetText("❌ Ошибка загрузки")
+			statusLabel.Refresh()
 		})
 		return err
 	}
 
 	fyne.Do(func() {
 		statusLabel.SetText("✅ Загрузка успешно завершена!")
+		statusLabel.Refresh()
 	})
 	return nil
 }
@@ -274,9 +253,7 @@ func main() {
 		fileFilter := storage.NewExtensionFileFilter([]string{".hex"})
 		fileDialog := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
-				fyne.Do(func() {
-					dialog.ShowError(err, w)
-				})
+				dialog.ShowError(err, w)
 				return
 			}
 			if reader == nil {
@@ -284,10 +261,8 @@ func main() {
 			}
 			defer reader.Close()
 			hexPath = reader.URI().Path()
-			fyne.Do(func() {
-				hexLabel.SetText(hexPath)
-				statusLabel.SetText("HEX файл выбран")
-			})
+			hexLabel.SetText(hexPath)
+			statusLabel.SetText("HEX файл выбран")
 		}, w)
 		fileDialog.SetFilter(fileFilter)
 		fileDialog.Show()
@@ -296,15 +271,11 @@ func main() {
 	btnSelectPort := newButtonWithBorder("🔌 Выбрать порт", func() {
 		boards, err := getAvailableBoards()
 		if err != nil {
-			fyne.Do(func() {
-				dialog.ShowError(fmt.Errorf("не удалось получить список плат: %v", err), w)
-			})
+			dialog.ShowError(fmt.Errorf("не удалось получить список плат: %v", err), w)
 			return
 		}
 		if len(boards) == 0 {
-			fyne.Do(func() {
-				dialog.ShowInformation("Нет плат", "Подключенные Arduino платы не найдены.", w)
-			})
+			dialog.ShowInformation("Нет плат", "Подключенные Arduino платы не найдены.", w)
 			return
 		}
 
@@ -332,25 +303,16 @@ func main() {
 				}
 			}
 		})
-		fyne.Do(func() {
-			dialog.ShowCustom("Выберите плату", "OK", selected, w)
-		})
+		dialog.ShowCustom("Выберите плату", "OK", selected, w)
 	})
 
-	// ИСПРАВЛЕНО: Сначала объявляем переменную, затем присваиваем ей значение.
-	// Это позволяет использовать btnUpload внутри самого обработчика.
-	var btnUpload *buttonWithBorder
-	btnUpload = newButtonWithBorder("⬆️ Загрузить", func() {
+	btnUpload := newButtonWithBorder("⬆️ Загрузить", func() {
 		if hexPath == "" {
-			fyne.Do(func() {
-				dialog.ShowInformation("Ошибка", "Сначала выберите HEX файл.", w)
-			})
+			dialog.ShowInformation("Ошибка", "Сначала выберите HEX файл.", w)
 			return
 		}
 		if portPath == "" {
-			fyne.Do(func() {
-				dialog.ShowInformation("Ошибка", "Сначала выберите порт.", w)
-			})
+			dialog.ShowInformation("Ошибка", "Сначала выберите порт.", w)
 			return
 		}
 		if fqbn == "" {
@@ -360,29 +322,25 @@ func main() {
 			}
 		}
 
-		// Фиксируем текущие значения для избежания гонок данных
-		currentHex := hexPath
-		currentPort := portPath
-		currentFqbn := fqbn
+		// Проверяем, установлено ли ядро
+		cmd := exec.Command("arduino-cli", "core", "list")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Run()
+		coreName := strings.Split(fqbn, ":")[0] + ":" + strings.Split(fqbn, ":")[1]
+		if !strings.Contains(out.String(), coreName) {
+			dialog.ShowError(fmt.Errorf("ядро %s не установлено. Установите его через arduino-cli или скопируйте папку packages", coreName), w)
+			return
+		}
 
-		// Блокируем кнопку на время прошивки
-		btnUpload.Disable()
-
+		// ИСПРАВЛЕНО: Запускаем процесс загрузки в фоновой горутине (go func).
+		// Ранее синхронный вызов uploadWithProgress блокировал основной UI-поток.
+		// Из-за этого планировщик Fyne не мог выполнить fyne.Do, и текст "Подождите..." 
+		// физически не успевал отобразиться на экране до блокировки.
 		go func() {
-			// Гарантированно разблокируем кнопку после завершения
-			defer fyne.Do(func() { btnUpload.Enable() })
-
-			// Проверяем, установлено ли ядро
-			coreName := strings.Split(currentFqbn, ":")[0] + ":" + strings.Split(currentFqbn, ":")[1]
-			if !isCoreInstalled(coreName) {
-				fyne.Do(func() {
-					dialog.ShowError(fmt.Errorf("ядро %s не установлено. Установите его через arduino-cli", coreName), w)
-				})
-				return
-			}
-
-			err := uploadWithProgress(currentHex, currentPort, currentFqbn, statusLabel)
+			err := uploadWithProgress(hexPath, portPath, fqbn, statusLabel)
 			if err != nil {
+				// Диалоги из горутины в Fyne нужно вызывать через fyne.Do
 				fyne.Do(func() {
 					dialog.ShowError(fmt.Errorf("ошибка загрузки: %v", err), w)
 				})
@@ -398,14 +356,15 @@ func main() {
 		statusLabel.SetText("❌ arduino-cli не найден")
 	}
 
-	// Проверка прав на группы (только для Linux)
-	if runtime.GOOS == "linux" {
-		inDialout, _ := checkUserInGroup("dialout")
-		inUucp, _ := checkUserInGroup("uucp")
-		if !inDialout && !inUucp {
-			go showPermissionWarning(a, w)
-			statusLabel.SetText("⚠️ Нет прав на доступ к портам (нужна группа dialout)")
-		}
+	// Проверка прав на группы
+	inDialout, _ := checkUserInGroup("dialout")
+	inUucp, _ := checkUserInGroup("uucp")
+	if !inDialout && !inUucp {
+		go func() {
+			time.Sleep(500 * time.Millisecond)
+			showPermissionWarning(a, w)
+		}()
+		statusLabel.SetText("⚠️ Нет прав на доступ к портам (нужна группа dialout)")
 	}
 
 	// Собираем интерфейс
@@ -425,31 +384,20 @@ func main() {
 
 func selectBoard(board BoardInfo, portPath *string, fqbn *string, portLabel *widget.Label, statusLabel *widget.Label, w fyne.Window) {
 	*portPath = board.Port
-	fyne.Do(func() {
-		portLabel.SetText(board.Port)
-	})
-	
+	portLabel.SetText(board.Port)
 	if board.FQBN != "" && strings.Count(board.FQBN, ":") >= 2 {
 		*fqbn = board.FQBN
-		fyne.Do(func() {
-			portLabel.SetText(board.Port + " (" + board.FQBN + ")")
-			statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
-		})
+		portLabel.SetText(board.Port + " (" + board.FQBN + ")")
+		statusLabel.SetText("Порт выбран: " + board.Port + " (" + board.FQBN + ")")
 	} else {
-		fyne.Do(func() {
-			statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
-		})
+		statusLabel.SetText("Тип платы не определён. Выберите FQBN.")
 		showFQBNInputDialog(w, fqbn, statusLabel)
 		if *fqbn != "" {
-			fyne.Do(func() {
-				portLabel.SetText(board.Port + " (" + *fqbn + ")")
-				statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
-			})
+			portLabel.SetText(board.Port + " (" + *fqbn + ")")
+			statusLabel.SetText("Порт выбран: " + board.Port + " (" + *fqbn + ")")
 		} else {
-			fyne.Do(func() {
-				portLabel.SetText(board.Port + " (тип не выбран)")
-				statusLabel.SetText("FQBN не выбран")
-			})
+			portLabel.SetText(board.Port + " (тип не выбран)")
+			statusLabel.SetText("FQBN не выбран")
 		}
 	}
 }
@@ -463,36 +411,25 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 		"esp32:esp32:esp32",
 		"esp8266:esp8266:generic",
 	}
-	
-	var dialogObj *dialog.CustomDialog
-	
 	selectWidget := widget.NewSelect(commonFQBNs, func(s string) {
 		*fqbn = s
-		fyne.Do(func() {
-			statusLabel.SetText("FQBN выбран: " + s)
-		})
+		statusLabel.SetText("FQBN выбран: " + s)
 	})
-	
 	entry := widget.NewEntry()
 	entry.SetPlaceHolder("Или введите свой FQBN вручную")
 	entry.OnSubmitted = func(s string) {
 		if s != "" {
 			*fqbn = s
-			fyne.Do(func() {
-				statusLabel.SetText("FQBN введён: " + s)
-			})
-			if dialogObj != nil {
-				dialogObj.Hide() // Закрываем диалог по Enter
-			}
+			statusLabel.SetText("FQBN введён: " + s)
 		}
 	}
+
+	var dialogObj *dialog.CustomDialog
 
 	okButton := newButtonWithBorder("✅ OK", func() {
 		if *fqbn == "" && len(commonFQBNs) > 0 {
 			*fqbn = commonFQBNs[0]
-			fyne.Do(func() {
-				statusLabel.SetText("FQBN выбран: " + *fqbn)
-			})
+			statusLabel.SetText("FQBN выбран: " + *fqbn)
 		}
 		if dialogObj != nil {
 			dialogObj.Hide()
@@ -512,50 +449,55 @@ func showFQBNInputDialog(w fyne.Window, fqbn *string, statusLabel *widget.Label)
 	dialogObj.Show()
 }
 
-// getAvailableBoards возвращает список плат через JSON парсинг
+// getAvailableBoards возвращает список плат через текстовый парсинг
 func getAvailableBoards() ([]BoardInfo, error) {
-	cmd := exec.Command("arduino-cli", "board", "list", "--format", "json")
-	out, err := cmd.Output()
+	cmd := exec.Command("arduino-cli", "board", "list")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
 	if err != nil {
 		return nil, fmt.Errorf("ошибка запуска arduino-cli: %v", err)
 	}
 
-	var ports []PortInfo
-	if err := json.Unmarshal(out, &ports); err != nil {
-		return nil, fmt.Errorf("ошибка парсинга JSON: %v", err)
-	}
-
+	lines := strings.Split(out.String(), "\n")
 	var boards []BoardInfo
-	for _, p := range ports {
-		fqbn := ""
-		if len(p.MatchingBoards) > 0 {
-			fqbn = p.MatchingBoards[0].FQBN
+	for _, line := range lines {
+		if !strings.Contains(line, "/dev/") && !strings.Contains(line, "COM") {
+			continue
 		}
-		boards = append(boards, BoardInfo{
-			Port: p.Port.Address,
-			FQBN: fqbn,
-		})
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		port := fields[0]
+		if !strings.HasPrefix(port, "/dev/") && !strings.HasPrefix(port, "COM") {
+			continue
+		}
+		var fqbn string
+		for _, field := range fields {
+			if strings.Count(field, ":") >= 2 {
+				fqbn = field
+				break
+			}
+		}
+		boards = append(boards, BoardInfo{Port: port, FQBN: fqbn})
 	}
 	return boards, nil
 }
 
-// isCoreInstalled проверяет, установлено ли ядро через JSON
-func isCoreInstalled(coreName string) bool {
-	cmd := exec.Command("arduino-cli", "core", "list", "--format", "json")
-	out, err := cmd.Output()
+func uploadHex(hexPath, portPath, fqbn string) error {
+	cmd := exec.Command(
+		"arduino-cli",
+		"upload",
+		"-p", portPath,
+		"--fqbn", fqbn,
+		"--input-file", hexPath,
+	)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
 	if err != nil {
-		return false
+		return fmt.Errorf("%v: %s", err, stderr.String())
 	}
-
-	var cores []CoreInfo
-	if err := json.Unmarshal(out, &cores); err != nil {
-		return false
-	}
-
-	for _, core := range cores {
-		if core.ID == coreName && core.Installed != "" {
-			return true
-		}
-	}
-	return false
+	return nil
 }
