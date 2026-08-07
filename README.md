@@ -5,9 +5,7 @@
 [![Fyne](https://img.shields.io/badge/Fyne-UI-blueviolet)](https://fyne.io/)
 
 
-![Логотип](/internal/assets/icon.png)
-
-<img src="./internal/assets/icon.png" alt="Логотип" width="150">
+![Логотип](/internal/assets/hex-loader.png)
 
 **GUI-загрузчик hex-файлов** на базе **Arduino CLI**, созданный на **Go** с использованием **Fyne** для Linux.
 
