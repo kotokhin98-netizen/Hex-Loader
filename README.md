@@ -25,8 +25,24 @@
 ### 📦 Alt Linux p11
 
 **Установка системных зависимостей** (делается один раз):
-```bash
-epmi --auto gcc-c++ golang rpm-build-golang libXcursor-devel libX11-devel libGL-devel libXrender-devel libXfixes-devel libXi-devel libXinerama-devel libXrandr-devel libwayland-egl-devel libXxf86vm-devel libxkbcommon-devel libwayland-cursor-devel arduino-cli
+```shell
+epmi --auto \
+    gcc-c++ \
+    golang \
+    rpm-build-golang \
+    libXcursor-devel \
+    libX11-devel \
+    libGL-devel \
+    libXrender-devel \
+    libXfixes-devel \
+    libXi-devel \
+    libXinerama-devel \
+    libXrandr-devel \
+    libwayland-egl-devel \
+    libXxf86vm-devel \
+    libxkbcommon-devel \
+    libwayland-cursor-devel \
+    arduino-cli
 ```
 
 #### Создание Go-проекта (на примере Hex Loader)
@@ -92,24 +108,19 @@ mkdir AppImage
 ```shell
 cd AppImage
 ```
-
 2. Создаём каталог `./hexloader.AppDir/`
 ```shell
 mkdir ./hexloader.AppDir/
 ```
-
 3. Копируем в `./hexloader.AppDir/` бинарник и иконку
-
 ```shell
 cp ../hexloader ./hexloader.AppDir/   # если бинарник в корне проекта
 cp ../icon.png ./hexloader.AppDir/icon.png
 ```
-
 переходим `./hexloader.AppDir/`
 ```shell
 cd ./hexloader.AppDir/
 ```
-
 4. создаём файл `hexloader.desktop`
 ```shell
 micro hexloader.desktop
@@ -126,7 +137,6 @@ Categories=Development;Electronics;
 Terminal=false
 ```
 > **Важно: имя иконки в .desktop должно совпадать с именем файла иконки (без расширения)**
-
 Правильная структура `./hexloader.AppDir/`
 ```
 ./hexloader.AppDir/
@@ -135,7 +145,6 @@ Terminal=false
 ├── icon.png      # Иконка (имя совпадает с Icon в .desktop)
 └── AppRun -> hexloader # Ссылка на бинарник
 ```
-
 выходим из каталога `./hexloader.AppDir/`
 ```shell
 cd ..
