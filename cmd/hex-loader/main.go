@@ -267,15 +267,6 @@ func main() {
 	w := a.NewWindow("Загрузчик HEX в Arduino")
 	w.Resize(fyne.NewSize(700, 480))
 
-	// --- УСТАНОВКА ИКОНКИ В ЗАГОЛОВОК ОКНА ---
-	// Загружаем иконку для заголовка окна
-	if file, err := os.Open("icon.png"); err == nil {
-		defer file.Close()
-		if img, err := fyne.LoadImageFromReader(file); err == nil {
-			w.SetIcon(img)
-		}
-	}
-
 	var hexPath string
 	var portPath string
 	var fqbn string
@@ -299,8 +290,10 @@ func main() {
 
 	// --- ИКОНКА В ИНТЕРФЕЙСЕ ---
 	iconImage := canvas.NewImageFromFile("icon.png")
-	iconImage.FillMode = canvas.ImageFillOriginal
+	iconImage.FillMode = canvas.ImageFillContain
 	iconImage.SetMinSize(fyne.NewSize(64, 64))
+	iconImage.Resize(fyne.NewSize(64, 64))
+	iconImage.Refresh()
 
 	// Создаём заголовок
 	title := canvas.NewText("Загрузчик HEX файлов в Arduino", color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xFF})
