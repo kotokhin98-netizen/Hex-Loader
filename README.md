@@ -93,7 +93,7 @@ mkdir AppImage
 ```
 переходим в него
 ```shell
-cd AppImage/
+cd AppImage
 ```
 
 2. Создаём каталог `./hexloader.AppDir/`
@@ -102,6 +102,11 @@ mkdir ./hexloader.AppDir/
 ```
 
 3. Копируем в `./hexloader.AppDir/` бинарник и иконку
+
+```shell
+cp ../hexloader ./hexloader.AppDir/   # если бинарник в корне проекта
+cp ../icon.png ./hexloader.AppDir/icon.png
+```
 
 переходим `./hexloader.AppDir/`
 ```shell
@@ -123,13 +128,14 @@ Icon=icon
 Categories=Development;Electronics;
 Terminal=false
 ```
+> **Важно: имя иконки в .desktop должно совпадать с именем файла иконки (без расширения)**
 
 Правильная структура AppDir
 ```
 ./hexloader.AppDir/
 ├── hexloader          # Ваш бинарник (исполняемый)
 ├── hexloader.desktop  # Файл .desktop
-├── hexloader.png      # Иконка (имя совпадает с Icon в .desktop)
+├── icon.png      # Иконка (имя совпадает с Icon в .desktop)
 └── AppRun -> hexloader # Ссылка на бинарник
 ```
 
