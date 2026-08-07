@@ -229,7 +229,8 @@ void loop() {
 
 ## 📄 Лицензия
 
-Этот проект распространяется под лицензией **MIT**. Подробнее см. в файле [LICENSE](LICENSE).
+- Этот проект распространяется под лицензией **MIT**. Подробнее см. в файле [LICENSE](LICENSE).
+- This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
