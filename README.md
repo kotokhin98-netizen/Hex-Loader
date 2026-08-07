@@ -87,7 +87,7 @@ sudo apt install build-essential golang libx11-dev libxrandr-dev libxinerama-dev
 
 ### Создание Appimage
 
-Создаём отдельный каталог для AppImage-пакета
+1. Создаём отдельный каталог для AppImage-пакета
 ```shell
 mkdir AppImage
 ```
@@ -95,18 +95,20 @@ mkdir AppImage
 ```shell
 cd AppImage/
 ```
-Создаём каталог `./hexloader.AppDir/`
+
+2. Создаём каталог `./hexloader.AppDir/`
 ```shell
 mkdir ./hexloader.AppDir/
 ```
 
-Копируем в `./hexloader.AppDir/` бинарник и иконку
+3. Копируем в `./hexloader.AppDir/` бинарник и иконку
 
 переходим `./hexloader.AppDir/`
 ```shell
 cd ./hexloader.AppDir/
 ```
-создаём `hexloader.desktop`
+
+4. создаём файл `hexloader.desktop`
 ```shell
 micro hexloader.desktop
 ```
@@ -121,14 +123,25 @@ Icon=icon
 Categories=Development;Electronics;
 Terminal=false
 ```
+
+Правильная структура AppDir
+```
+./hexloader.AppDir/
+├── hexloader          # Ваш бинарник (исполняемый)
+├── hexloader.desktop  # Файл .desktop
+├── hexloader.png      # Иконка (имя совпадает с Icon в .desktop)
+└── AppRun -> hexloader # Ссылка на бинарник
+```
+
 выходим из каталога `./hexloader.AppDir/`
 ```shell
-cd..
+cd ..
 ```
-выполняем загрузку `appimagetool`
+5. выполняем загрузку `appimagetool`
 ```shell
 wget -c "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
 ```
+делаем `appimagetool` исполняемым
 ```shell
 chmod +x appimagetool-x86_64.AppImage
 ```
@@ -136,7 +149,7 @@ chmod +x appimagetool-x86_64.AppImage
 ```shell
 ARCH=x86_64 ./appimagetool-x86_64.AppImage ./hexloader.AppDir/
 ```
-запускаем
+запускаем получившийся AppImage-пакет
 ```shell
 ./Hex_Loader-x86_64.AppImage
 ```
