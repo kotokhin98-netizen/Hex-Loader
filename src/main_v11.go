@@ -93,7 +93,7 @@ func (r *buttonRenderer) init() {
 	r.bg.CornerRadius = 8
 
 	r.border = canvas.NewRectangle(color.Transparent)
-	r.border.StrokeWidth = 2.5
+	r.border.StrokeWidth = 2
 	r.border.StrokeColor = color.NRGBA{R: 0x33, G: 0x33, B: 0x33, A: 0xFF}
 	r.border.CornerRadius = 8
 
