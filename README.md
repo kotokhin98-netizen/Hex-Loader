@@ -7,6 +7,8 @@
 
 ![Логотип](/internal/assets/icon.png)
 
+<img src="/internal/assets/icon.png" alt="Логотип" width="150">
+
 **GUI-загрузчик hex-файлов** на базе **Arduino CLI**, созданный на **Go** с использованием **Fyne** для Linux.
 
 ### 🚀 Что умеет Hex Loader?
@@ -22,6 +24,10 @@
 
 ![Img](/assets/images/1.png)
 ![Img](/assets/images/2.png)
+![Img](/assets/images/3.png)
+![Img](/assets/images/4.png)
+![Img](/assets/images/5.png)
+![Img](/assets/images/6.png)
 
 ---
 
