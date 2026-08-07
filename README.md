@@ -85,6 +85,64 @@ sudo apt install build-essential golang libx11-dev libxrandr-dev libxinerama-dev
 
 ---
 
+### Создание Appimage
+
+Создаём отдельный каталог для AppImage-пакета
+```shell
+mkdir AppImage
+```
+переходим в него
+```shell
+cd AppImage/
+```
+Создаём каталог `./hexloader.AppDir/`
+```shell
+mkdir ./hexloader.AppDir/
+```
+
+Копируем в `./hexloader.AppDir/` бинарник и иконку
+
+переходим `./hexloader.AppDir/`
+```shell
+cd ./hexloader.AppDir/
+```
+создаём `hexloader.desktop`
+```shell
+micro hexloader.desktop
+```
+Содержимое `.desktop` файла
+```.desktop
+[Desktop Entry]
+Type=Application
+Name=Hex Loader
+Comment=GUI загрузчик HEX файлов для Arduino
+Exec=hexloader
+Icon=icon
+Categories=Development;Electronics;
+Terminal=false
+```
+выходим из каталога `./hexloader.AppDir/`
+```shell
+cd..
+```
+выполняем загрузку `appimagetool`
+```shell
+wget -c "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+```
+```shell
+chmod +x appimagetool-x86_64.AppImage
+```
+выполняем сборку AppImage-пакета
+```shell
+ARCH=x86_64 ./appimagetool-x86_64.AppImage ./hexloader.AppDir/
+```
+запускаем
+```shell
+./Hex_Loader-x86_64.AppImage
+```
+
+---
+
 ### 🌍 Arduino CLI не может загрузить индексы в РФ из-за санкций
 
 **Варианты решения проблемы:**
