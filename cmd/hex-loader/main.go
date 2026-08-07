@@ -146,8 +146,6 @@ func showCustomInformation(title, message string, w fyne.Window) {
 	label := widget.NewLabel(message)
 	label.Wrapping = fyne.TextWrapWord
 
-	// ИСПРАВЛЕНО: Сначала объявляем переменную, затем присваиваем.
-	// Это позволяет корректно захватить указатель на диалог внутри замыкания кнопки.
 	var d *dialog.CustomDialog
 
 	d = dialog.NewCustom(title, "", container.NewVBox(
@@ -191,9 +189,8 @@ func checkUserInGroup(groupName string) (bool, error) {
 
 // showPermissionWarning показывает предупреждение о правах
 func showPermissionWarning(a fyne.App, w fyne.Window) {
-	// ИСПРАВЛЕНО: Добавлено закрытие диалога и правильное объявление переменной
 	var d *dialog.CustomDialog
-	
+
 	label := widget.NewLabel(
 		"⚠️ У вас нет прав для работы с последовательными портами.\n\n" +
 			"Чтобы Hex Loader мог определять и прошивать платы,\n" +
@@ -203,13 +200,13 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 			"Вы всё равно можете использовать программу,\n" +
 			"но порты могут не определяться.",
 	)
-	
+
 	btnOk := newButtonWithBorder("Понятно", func() {
 		if d != nil {
 			d.Hide()
 		}
 	})
-	
+
 	content := container.NewVBox(label, btnOk)
 	d = dialog.NewCustom("Внимание", "", content, w)
 	d.Resize(fyne.NewSize(500, 300))
@@ -268,7 +265,16 @@ func main() {
 	a.Settings().SetTheme(&myTheme{theme.DefaultTheme()})
 
 	w := a.NewWindow("Загрузчик HEX в Arduino")
-	w.Resize(fyne.NewSize(700, 420))
+	w.Resize(fyne.NewSize(700, 480))
+
+	// --- УСТАНОВКА ИКОНКИ В ЗАГОЛОВОК ОКНА ---
+	// Загружаем иконку для заголовка окна
+	if file, err := os.Open("icon.png"); err == nil {
+		defer file.Close()
+		if img, err := fyne.LoadImageFromReader(file); err == nil {
+			w.SetIcon(img)
+		}
+	}
 
 	var hexPath string
 	var portPath string
@@ -291,11 +297,22 @@ func main() {
 	portLabel := widget.NewLabel("Порт не выбран")
 	statusLabel := widget.NewLabel("Готов к работе")
 
+	// --- ИКОНКА В ИНТЕРФЕЙСЕ ---
+	iconImage := canvas.NewImageFromFile("icon.png")
+	iconImage.FillMode = canvas.ImageFillOriginal
+	iconImage.SetMinSize(fyne.NewSize(64, 64))
+
 	// Создаём заголовок
 	title := canvas.NewText("Загрузчик HEX файлов в Arduino", color.NRGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xFF})
 	title.TextSize = 22
 	title.TextStyle.Bold = true
 	title.Alignment = fyne.TextAlignCenter
+
+	// Собираем заголовок с иконкой
+	header := container.NewVBox(
+		container.NewCenter(iconImage),
+		title,
+	)
 
 	// Кнопка выбора HEX с фильтром и сохранением пути
 	btnSelectHex := newButtonWithBorder("📂 Выбрать HEX", func() {
@@ -414,7 +431,7 @@ func main() {
 	}
 
 	content := container.NewVBox(
-		title,
+		header, // Заголовок с иконкой
 		widget.NewSeparator(),
 		container.NewHBox(btnSelectHex, hexLabel),
 		container.NewHBox(btnSelectPort, portLabel),
