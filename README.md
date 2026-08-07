@@ -4,6 +4,9 @@
 [![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Fyne](https://img.shields.io/badge/Fyne-UI-blueviolet)](https://fyne.io/)
 
+
+![Логотип](/internal/assets/icon.png)
+
 **GUI-загрузчик hex-файлов** на базе **Arduino CLI**, созданный на **Go** с использованием **Fyne** для Linux.
 
 ### 🚀 Что умеет Hex Loader?
@@ -17,8 +20,8 @@
 - Работать без интернета (используя локально установленные ядра и инструменты).
 - Работать в **Alt Linux p11** и других Linux-дистрибутивах с установленными зависимостями.
 
-![Img](/img/1.png)
-![Img](/img/2.png)
+![Img](/assets/images/1.png)
+![Img](/assets/images/2.png)
 
 ---
 
