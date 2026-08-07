@@ -146,8 +146,14 @@ func showCustomInformation(title, message string, w fyne.Window) {
 	label := widget.NewLabel(message)
 	label.Wrapping = fyne.TextWrapWord
 
+	// Создаём диалог заранее, чтобы иметь ссылку на него
+	var dialogObj *dialog.CustomDialog
+
+	// Кнопка OK закрывает диалог
 	okButton := newButtonWithBorder("OK", func() {
-		// Закрываем диалог
+		if dialogObj != nil {
+			dialogObj.Hide()
+		}
 	})
 
 	content := container.NewVBox(
@@ -155,9 +161,9 @@ func showCustomInformation(title, message string, w fyne.Window) {
 		container.NewCenter(okButton),
 	)
 
-	dialog := dialog.NewCustom(title, "", content, w)
-	dialog.Resize(fyne.NewSize(400, 200))
-	dialog.Show()
+	dialogObj = dialog.NewCustom(title, "", content, w)
+	dialogObj.Resize(fyne.NewSize(400, 200))
+	dialogObj.Show()
 }
 
 // checkArduinoCLI проверяет, доступен ли arduino-cli в PATH
