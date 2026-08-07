@@ -1,10 +1,8 @@
-# Arduino GitHub Downloader
+## Hex Loader
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Fyne](https://img.shields.io/badge/Fyne-UI-blueviolet)](https://fyne.io/)
-
-## Hex Loader
 
 **GUI-загрузчик hex-файлов** на базе **Arduino CLI**, созданный на **Go** с использованием **Fyne** для Linux.
 
