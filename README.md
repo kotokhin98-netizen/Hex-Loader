@@ -100,7 +100,7 @@ sudo apt install build-essential golang libx11-dev libxrandr-dev libxinerama-dev
 
 ### Создание Appimage
 
-1. Создаём отдельный каталог для AppImage-пакета
+1. Создаём отдельный каталог для AppImage-пакета.
 ```shell
 mkdir AppImage
 ```
@@ -108,11 +108,11 @@ mkdir AppImage
 ```shell
 cd AppImage
 ```
-2. Создаём каталог `./hexloader.AppDir/`
+2. Создаём каталог `./hexloader.AppDir/`.
 ```shell
 mkdir ./hexloader.AppDir/
 ```
-3. Копируем в `./hexloader.AppDir/` бинарник и иконку
+3. Копируем в `./hexloader.AppDir/` бинарник и иконку.
 ```shell
 cp ../hexloader ./hexloader.AppDir/   # если бинарник в корне проекта
 cp ../icon.png ./hexloader.AppDir/icon.png
@@ -121,7 +121,7 @@ cp ../icon.png ./hexloader.AppDir/icon.png
 ```shell
 cd ./hexloader.AppDir/
 ```
-4. создаём файл `hexloader.desktop`
+4. создаём файл `hexloader.desktop`.
 ```shell
 micro hexloader.desktop
 ```
@@ -145,11 +145,11 @@ Terminal=false
 ├── icon.png      # Иконка (имя совпадает с Icon в .desktop)
 └── AppRun -> hexloader # Ссылка на бинарник
 ```
-выходим из каталога `./hexloader.AppDir/`
+выходим из каталога `./hexloader.AppDir/`.
 ```shell
 cd ..
 ```
-5. выполняем загрузку `appimagetool`
+5. выполняем загрузку `appimagetool`.
 ```shell
 wget -c "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
 ```
@@ -197,7 +197,7 @@ find ~/.arduino15/packages/ -path "*/bin/*" -exec chmod +x {} \;
 
 ### Проверить работу Hex Loader
 
-1. Создать скетч
+1. Создать скетч.
 ```cpp
 // big_sketch.ino
 // Скетч занимает ~30 КБ в памяти Arduino Uno
@@ -220,7 +220,7 @@ void loop() {
 }
 ```
 2. Скомпилировать его в **Arduino IDE**, сохранить HEX-файл (Скетч → Экспортировать скомпилированный бинарный файл).
-3. Загрузить полученный HEX-файл в плату с помощью **Hex Loader**
+3. Загрузить полученный HEX-файл в плату с помощью **Hex Loader**.
 
 ---
 
