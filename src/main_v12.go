@@ -146,16 +146,20 @@ func showCustomInformation(title, message string, w fyne.Window) {
 	label := widget.NewLabel(message)
 	label.Wrapping = fyne.TextWrapWord
 
-	// Создаём диалог
-	dialog := dialog.NewCustom(title, "", container.NewVBox(
+	// ИСПРАВЛЕНО: Сначала объявляем переменную, затем присваиваем.
+	// Это позволяет корректно захватить указатель на диалог внутри замыкания кнопки.
+	var d *dialog.CustomDialog
+
+	d = dialog.NewCustom(title, "", container.NewVBox(
 		label,
 		container.NewCenter(newButtonWithBorder("OK", func() {
-			// Закрываем диалог через замыкание
-			dialog.Hide()
+			if d != nil {
+				d.Hide()
+			}
 		})),
 	), w)
-	dialog.Resize(fyne.NewSize(400, 200))
-	dialog.Show()
+	d.Resize(fyne.NewSize(400, 200))
+	d.Show()
 }
 
 // checkArduinoCLI проверяет, доступен ли arduino-cli в PATH
@@ -187,6 +191,9 @@ func checkUserInGroup(groupName string) (bool, error) {
 
 // showPermissionWarning показывает предупреждение о правах
 func showPermissionWarning(a fyne.App, w fyne.Window) {
+	// ИСПРАВЛЕНО: Добавлено закрытие диалога и правильное объявление переменной
+	var d *dialog.CustomDialog
+	
 	label := widget.NewLabel(
 		"⚠️ У вас нет прав для работы с последовательными портами.\n\n" +
 			"Чтобы Hex Loader мог определять и прошивать платы,\n" +
@@ -196,11 +203,17 @@ func showPermissionWarning(a fyne.App, w fyne.Window) {
 			"Вы всё равно можете использовать программу,\n" +
 			"но порты могут не определяться.",
 	)
-	btnOk := widget.NewButton("Понятно", func() {})
+	
+	btnOk := newButtonWithBorder("Понятно", func() {
+		if d != nil {
+			d.Hide()
+		}
+	})
+	
 	content := container.NewVBox(label, btnOk)
-	dialog := dialog.NewCustom("Внимание", "", content, w)
-	dialog.Resize(fyne.NewSize(500, 300))
-	dialog.Show()
+	d = dialog.NewCustom("Внимание", "", content, w)
+	d.Resize(fyne.NewSize(500, 300))
+	d.Show()
 }
 
 // uploadWithProgress выполняет загрузку с отображением статуса
