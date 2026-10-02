@@ -31,7 +31,7 @@ jobs:
       - name: Go vet
         run: go vet ./...
       - name: Build smoke test
-        run: go build -ldflags="-s -w -trimpath" -o /tmp/hex-loader .
+        run: go build -trimpath -ldflags="-s -w" -o /tmp/hex-loader ./cmd/hex-loader
 
   release:
     needs: test
@@ -90,7 +90,7 @@ jobs:
         env:
           CGO_ENABLED: 1
         run: |
-          go build -ldflags="-s -w -trimpath ${{ matrix.extra_ldflags }}" -o ${{ matrix.artifact }} .
+          go build -trimpath -ldflags="-s -w ${{ matrix.extra_ldflags }}" -o ${{ matrix.artifact }} ./cmd/hex-loader
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
